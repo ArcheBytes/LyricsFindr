@@ -6,10 +6,10 @@ const options: swaggerJsdoc.Options = {
     info: {
       title: 'LyricsFindr API',
       version: '1.0.0',
-      description: 'API para buscar canciones y letras'
+      description: 'API to find songs and lyrics'
     },
     servers: [
-      { url: 'http://localhost:3000', description: 'Desarrollo' }
+      { url: 'http://localhost:3000', description: 'Development' }
     ]
   },
   apis: ['./src/routes/*.ts']
