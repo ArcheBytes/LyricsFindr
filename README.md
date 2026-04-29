@@ -10,6 +10,7 @@
 ![License](https://img.shields.io/badge/license-ISC-yellow)
 
 </div>
+
 REST API for searching songs and lyrics using [lrclib.net](https://lrclib.net).
 
 ## Endpoints
