@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "express-rate-limit": "^8.4.1",
+    "express-validator": "^7.3.2",
+    "helmet": "^8.1.0"
+  },
+  "devDependencies": {
+    "@types/express-validator": "^2.20.33"
+  }
+}

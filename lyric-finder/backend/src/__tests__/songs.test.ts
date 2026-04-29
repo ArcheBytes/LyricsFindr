@@ -9,7 +9,7 @@ describe('GET /api/songs/search', () => {
   it('should return 400 if no query param', async () => {
     const res = await request(app).get('/api/songs/search');
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Param "q" is required');
+    expect(res.body.errors).toBeDefined();
   });
 
   it('should return results for a valid query', async () => {
@@ -35,13 +35,13 @@ describe('GET /api/songs/lyrics', () => {
   it('should return 400 if artist param is missing', async () => {
     const res = await request(app).get('/api/songs/lyrics?title=Bohemian Rhapsody');
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Params "artist" and "title" are required');
+    expect(res.body.errors).toBeDefined();
   });
 
   it('should return 400 if title param is missing', async () => {
     const res = await request(app).get('/api/songs/lyrics?artist=Queen');
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Params "artist" and "title" are required');
+    expect(res.body.errors).toBeDefined();
   });
 
   it('should return lyrics for valid params', async () => {
