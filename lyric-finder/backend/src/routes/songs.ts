@@ -18,7 +18,7 @@ const handleValidation = (req: Request, res: Response, next: NextFunction): void
  * @openapi
  * /api/songs/search:
  *   get:
- *     summary: Busca canciones por nombre
+ *     summary: Search songs by name
  *     parameters:
  *       - in: query
  *         name: q
@@ -26,16 +26,16 @@ const handleValidation = (req: Request, res: Response, next: NextFunction): void
  *         schema:
  *           type: string
  *           maxLength: 100
- *         description: Nombre de la canción o artista
+ *         description: Song or artist name
  *     responses:
  *       200:
- *         description: Lista de canciones encontradas
+ *         description: List of matching songs
  *       400:
- *         description: Parámetro q requerido
+ *         description: Query param q is required
  *       429:
- *         description: Demasiadas peticiones
+ *         description: Too many requests
  *       500:
- *         description: Error al contactar con lrclib
+ *         description: Error contacting lrclib
  */
 router.get(
   '/search',
@@ -55,7 +55,7 @@ router.get(
  * @openapi
  * /api/songs/lyrics:
  *   get:
- *     summary: Obtiene la letra de una canción
+ *     summary: Get lyrics for a song
  *     parameters:
  *       - in: query
  *         name: artist
@@ -63,23 +63,23 @@ router.get(
  *         schema:
  *           type: string
  *           maxLength: 100
- *         description: Nombre del artista
+ *         description: Artist name
  *       - in: query
  *         name: title
  *         required: true
  *         schema:
  *           type: string
  *           maxLength: 100
- *         description: Título de la canción
+ *         description: Song title
  *     responses:
  *       200:
- *         description: Letra de la canción
+ *         description: Song lyrics
  *       400:
- *         description: Parámetros artist y title requeridos
+ *         description: Params artist and title are required
  *       429:
- *         description: Demasiadas peticiones
+ *         description: Too many requests
  *       500:
- *         description: Error al contactar con lrclib
+ *         description: Error contacting lrclib
  */
 router.get(
   '/lyrics',

@@ -3,19 +3,23 @@
 ![CI](https://github.com/ArcheBytes/LyricsFindr/actions/workflows/ci.yml/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/ArcheBytes/LyricsFindr/badge.svg?branch=main)](https://coveralls.io/github/ArcheBytes/LyricsFindr?branch=main)
 
-API REST para buscar canciones y letras usando [lrclib.net](https://lrclib.net).
+REST API for searching songs and lyrics using [lrclib.net](https://lrclib.net).
 
 ## Endpoints
 
-- `GET /api/songs/search?q={query}` — Busca canciones por nombre
-- `GET /api/songs/lyrics?artist={artist}&title={title}` — Obtiene la letra de una canción
-- `GET /health` — Estado del servidor
+- `GET /api/songs/search?q={query}` — Search songs by name
+- `GET /api/songs/lyrics?artist={artist}&title={title}` — Get lyrics for a song
+- `GET /health` — Server health check
 
-## Desarrollo
+## Documentation
 
-Este proyecto usa Dev Containers con Podman. Abre el proyecto en VS Code y selecciona "Reopen in Container".
+Interactive API documentation available at `http://localhost:3000/api-docs` when running locally.
 
-\`\`\`bash
-npm run dev    # Arranca el servidor en modo desarrollo
-npm test       # Ejecuta los tests con cobertura
-\`\`\`
+## Development
+
+This project uses Dev Containers with Podman. Open the project in VS Code and select "Reopen in Container".
+
+```bash
+npm run dev    # Start the server in development mode
+npm test       # Run tests with coverage
+```
