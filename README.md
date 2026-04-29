@@ -1,8 +1,15 @@
 # LyricsFindr Backend
 
+<div align="center">
+
 ![CI](https://github.com/ArcheBytes/LyricsFindr/actions/workflows/ci.yml/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/ArcheBytes/LyricsFindr/badge.svg?branch=main)](https://coveralls.io/github/ArcheBytes/LyricsFindr?branch=main)
+![Node](https://img.shields.io/badge/node-22-brightgreen)
+![TypeScript](https://img.shields.io/badge/typescript-5.x-blue)
+![Express](https://img.shields.io/badge/express-5.x-lightgrey)
+![License](https://img.shields.io/badge/license-ISC-yellow)
 
+</div>
 REST API for searching songs and lyrics using [lrclib.net](https://lrclib.net).
 
 ## Endpoints
