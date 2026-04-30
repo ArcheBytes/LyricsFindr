@@ -86,3 +86,11 @@ Desktop.ini
 *.bak
 tmp/
 temp/
+# ========================
+# Package managers
+# ========================
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.yarn/
+.pnpm-store/
