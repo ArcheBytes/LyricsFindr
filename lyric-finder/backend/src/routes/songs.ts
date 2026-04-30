@@ -53,53 +53,23 @@ router.get(
 
 /**
  * @openapi
- * /api/songs/lyrics:
+ * /api/songs/lyrics/{id}:
  *   get:
- *     summary: Get lyrics for a song
+ *     summary: Get lyrics for a song by ID
  *     parameters:
- *       - in: query
- *         name: artist
+ *       - in: path
+ *         name: id
  *         required: true
  *         schema:
- *           type: string
- *           maxLength: 100
- *         description: Artist name
- *       - in: query
- *         name: title
- *         required: true
- *         schema:
- *           type: string
- *           maxLength: 100
- *         description: Song title
+ *           type: integer
+ *         description: lrclib song ID
  *     responses:
  *       200:
  *         description: Song lyrics
- *       400:
- *         description: Params artist and title are required
- *       429:
- *         description: Too many requests
  *       500:
  *         description: Error contacting lrclib
  */
-router.get(
-  '/lyrics',
-  [
-    query('artist')
-      .notEmpty().withMessage('Param "artist" is required')
-      .isString()
-      .trim()
-      .escape()
-      .isLength({ max: 100 }).withMessage('Artist name too long'),
-    query('title')
-      .notEmpty().withMessage('Param "title" is required')
-      .isString()
-      .trim()
-      .escape()
-      .isLength({ max: 100 }).withMessage('Title too long')
-  ],
-  handleValidation,
-  getLyrics
-);
+router.get('/lyrics/:id', getLyrics);
 
 /**
  * @openapi

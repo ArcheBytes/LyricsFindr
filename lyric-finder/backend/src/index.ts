@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './swagger';
 import songsRouter from './routes/songs';
@@ -10,8 +11,12 @@ dotenv.config();
 
 const app = express();
 
+app.use(cors({
+  origin: 'http://localhost:5173'
+}));
+
 app.use(helmet({
-  contentSecurityPolicy: false // Necesario para que Swagger UI cargue bien
+  contentSecurityPolicy: false
 }));
 
 const limiter = rateLimit({

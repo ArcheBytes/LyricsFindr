@@ -20,13 +20,13 @@ export const searchSongs = async (req: Request, res: Response): Promise<void> =>
 };
 
 export const getLyrics = async (req: Request, res: Response): Promise<void> => {
-  const { artist, title } = matchedData(req);
+  const { id } = req.params;
 
   try {
     // Check cache first
     const cached = await pool.query(
-      'SELECT * FROM songs WHERE artist = $1 AND title = $2',
-      [artist, title]
+      'SELECT * FROM songs WHERE lrclib_id = $1',
+      [id]
     );
 
     if (cached.rows.length > 0) {
@@ -34,9 +34,8 @@ export const getLyrics = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Fetch from lrclib if not cached
-    const response = await axios.get(`${LRCLIB_BASE}/get`, {
-      params: { artist_name: artist, track_name: title },
+    // Fetch from lrclib by ID
+    const response = await axios.get(`${LRCLIB_BASE}/get/${id}`, {
       headers: { 'Lrclib-Client': 'lyric-finder (dev)' }
     });
 
@@ -44,10 +43,10 @@ export const getLyrics = async (req: Request, res: Response): Promise<void> => {
 
     // Save to cache
     await pool.query(
-      `INSERT INTO songs (title, artist, album, plain_lyrics, synced_lyrics)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (title, artist) DO NOTHING`,
-      [trackName, artistName, albumName, plainLyrics, syncedLyrics]
+      `INSERT INTO songs (lrclib_id, title, artist, album, plain_lyrics, synced_lyrics)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (lrclib_id) DO NOTHING`,
+      [id, trackName, artistName, albumName, plainLyrics, syncedLyrics]
     );
 
     res.json(response.data);
