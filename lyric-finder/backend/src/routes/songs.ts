@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { query, validationResult } from 'express-validator';
-import { searchSongs, getLyrics } from '../controllers/songsController';
+import { searchSongs, getLyrics, searchByLyrics } from '../controllers/songsController';
 import { Request, Response, NextFunction } from 'express';
 
 const router = Router();
@@ -99,6 +99,43 @@ router.get(
   ],
   handleValidation,
   getLyrics
+);
+
+/**
+ * @openapi
+ * /api/songs/search-by-lyrics:
+ *   get:
+ *     summary: Search songs by lyrics fragment
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *           maxLength: 200
+ *         description: Lyrics fragment to search
+ *     responses:
+ *       200:
+ *         description: List of matching songs ordered by relevance
+ *       400:
+ *         description: Query param q is required
+ *       429:
+ *         description: Too many requests
+ *       500:
+ *         description: Error searching lyrics
+ */
+router.get(
+  '/search-by-lyrics',
+  [
+    query('q')
+      .notEmpty().withMessage('Param "q" is required')
+      .isString()
+      .trim()
+      .escape()
+      .isLength({ max: 200 }).withMessage('Query too long')
+  ],
+  handleValidation,
+  searchByLyrics
 );
 
 export default router;
