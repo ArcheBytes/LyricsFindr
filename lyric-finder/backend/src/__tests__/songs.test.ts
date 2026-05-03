@@ -8,8 +8,8 @@ jest.mock('../db', () => ({
   query: jest.fn()
 }));
 
-const mockedQuery = pool.query as jest.Mock;
 const mockedAxios = axios as jest.Mocked<typeof axios>;
+const mockedQuery = pool.query as jest.Mock;
 
 describe('GET /api/songs/search', () => {
   it('should return 400 if no query param', async () => {
@@ -19,13 +19,18 @@ describe('GET /api/songs/search', () => {
   });
 
   it('should return results for a valid query', async () => {
-    mockedAxios.get.mockResolvedValueOnce({
-      data: [{ id: 1, trackName: 'Bohemian Rhapsody', artistName: 'Queen' }]
-    });
+    mockedAxios.get
+      .mockResolvedValueOnce({
+        data: [{ id: 1, trackName: 'Bohemian Rhapsody', artistName: 'Queen' }]
+      })
+      .mockResolvedValueOnce({
+        data: { results: [{ trackName: 'Bohemian Rhapsody', artistName: 'Queen', artworkUrl100: 'https://example.com/100x100bb.jpg' }] }
+      });
 
     const res = await request(app).get('/api/songs/search?q=bohemian rhapsody');
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body[0].artworkUrl).toBeDefined();
   });
 
   it('should return 500 if external API fails', async () => {
@@ -37,37 +42,26 @@ describe('GET /api/songs/search', () => {
   });
 });
 
-describe('GET /api/songs/lyrics', () => {
-  it('should return 400 if artist param is missing', async () => {
-    const res = await request(app).get('/api/songs/lyrics?title=Bohemian Rhapsody');
-    expect(res.status).toBe(400);
-    expect(res.body.errors).toBeDefined();
-  });
-
-  it('should return 400 if title param is missing', async () => {
-    const res = await request(app).get('/api/songs/lyrics?artist=Queen');
-    expect(res.status).toBe(400);
-    expect(res.body.errors).toBeDefined();
-  });
-
+describe('GET /api/songs/lyrics/:id', () => {
   it('should return lyrics from cache if available', async () => {
     mockedQuery.mockResolvedValueOnce({
       rows: [{
+        lrclib_id: 1,
         title: 'Bohemian Rhapsody',
         artist: 'Queen',
         plain_lyrics: 'Is this the real life...'
       }]
-    } as any);
+    });
 
-    const res = await request(app).get('/api/songs/lyrics?artist=Queen&title=Bohemian Rhapsody');
+    const res = await request(app).get('/api/songs/lyrics/1');
     expect(res.status).toBe(200);
-    expect(res.body.plain_lyrics).toBeDefined();
+    expect(res.body.plainLyrics).toBeDefined();
   });
 
   it('should fetch from lrclib and cache if not in db', async () => {
     mockedQuery
-      .mockResolvedValueOnce({ rows: [] } as any)  // cache miss
-      .mockResolvedValueOnce({ rows: [] } as any); // insert
+      .mockResolvedValueOnce({ rows: [] })  // cache miss
+      .mockResolvedValueOnce({ rows: [] }); // insert
 
     mockedAxios.get.mockResolvedValueOnce({
       data: {
@@ -79,16 +73,16 @@ describe('GET /api/songs/lyrics', () => {
       }
     });
 
-    const res = await request(app).get('/api/songs/lyrics?artist=Queen&title=Bohemian Rhapsody');
+    const res = await request(app).get('/api/songs/lyrics/1');
     expect(res.status).toBe(200);
     expect(res.body.plainLyrics).toBeDefined();
   });
 
   it('should return 500 if external API fails', async () => {
-    mockedQuery.mockResolvedValueOnce({ rows: [] } as any);
+    mockedQuery.mockResolvedValueOnce({ rows: [] });
     mockedAxios.get.mockRejectedValueOnce(new Error('API down'));
 
-    const res = await request(app).get('/api/songs/lyrics?artist=Queen&title=Bohemian Rhapsody');
+    const res = await request(app).get('/api/songs/lyrics/1');
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('Error fetching lyrics');
   });
@@ -104,7 +98,7 @@ describe('GET /api/songs/search-by-lyrics', () => {
   it('should return matching songs', async () => {
     mockedQuery.mockResolvedValueOnce({
       rows: [{ title: 'Bohemian Rhapsody', artist: 'Queen', rank: 0.9 }]
-    } as any);
+    });
 
     const res = await request(app).get('/api/songs/search-by-lyrics?q=real life');
     expect(res.status).toBe(200);
