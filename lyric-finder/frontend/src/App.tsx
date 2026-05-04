@@ -15,14 +15,26 @@ const GRADIENTS = [
   'from-cyan-400 via-blue-500 to-indigo-600',
 ]
 
-const SLIDE_W   = 390   // px – center card width
-const SLIDE_MS  = 750   // ms – scroll transition duration
-const AUTO_MS   = 5000  // ms – auto-advance interval
+const PLACEHOLDERS = [
+  { artistName: 'Taylor Swift',  trackName: 'Shake It Off' },
+  { artistName: 'The Weeknd',    trackName: 'Blinding Lights' },
+  { artistName: 'Billie Eilish', trackName: 'Bad Guy' },
+  { artistName: 'Drake',         trackName: "God's Plan" },
+  { artistName: 'Dua Lipa',      trackName: 'Levitating' },
+  { artistName: 'Ed Sheeran',    trackName: 'Shape of You' },
+  { artistName: 'Adele',         trackName: 'Rolling in the Deep' },
+]
+
+const SLIDE_W  = 390   // px – center card width
+const SLIDE_MS = 750   // ms – transition duration
+const AUTO_MS  = 5000  // ms – auto-advance interval
 
 interface CarouselItem {
   id: number
   artworkUrl: string | null
   gradient: string
+  trackName: string
+  artistName: string
 }
 
 function CardFace({ item, blur = 0 }: { item: CarouselItem; blur?: number }) {
@@ -43,6 +55,7 @@ function CardFace({ item, blur = 0 }: { item: CarouselItem; blur?: number }) {
 export default function App() {
   const heroRef    = useRef<HTMLDivElement>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
+  const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const {
     mode, query, results, selected, loading, error,
@@ -51,51 +64,101 @@ export default function App() {
 
   const { songs: featuredSongs, loading: featuredLoading } = useFeaturedSongs()
 
-  // ── Carousel state ──────────────────────────────────────────────────────────
+  // ── Carousel items ──────────────────────────────────────────────────────────
   const items = useMemo<CarouselItem[]>(() => {
     if (featuredLoading || featuredSongs.length === 0) {
-      return GRADIENTS.map((gradient, i) => ({ id: i, artworkUrl: null, gradient }))
+      return GRADIENTS.map((gradient, i) => ({
+        id: i,
+        artworkUrl: null,
+        gradient,
+        trackName:  PLACEHOLDERS[i].trackName,
+        artistName: PLACEHOLDERS[i].artistName,
+      }))
     }
-    return featuredSongs
-      .slice(0, 7)
-      .map((s, i) => ({ id: s.id, artworkUrl: s.artworkUrl, gradient: GRADIENTS[i % GRADIENTS.length] }))
+    return featuredSongs.slice(0, 7).map((s, i) => ({
+      id:         s.id,
+      artworkUrl: s.artworkUrl,
+      gradient:   GRADIENTS[i % GRADIENTS.length],
+      trackName:  s.trackName,
+      artistName: s.artistName,
+    }))
   }, [featuredLoading, featuredSongs])
-
-  // Track = real items + clone of first item at the end (seamless infinite loop)
-  const track = useMemo(() => [...items, { ...items[0], id: -1 }], [items])
 
   const n = items.length
 
-  // slidePos  → position in the track (0…n, where n is the clone)
-  // animated  → whether CSS transition is active
-  const [slidePos,  setSlidePos]  = useState(0)
-  const [animated,  setAnimated]  = useState(true)
+  // Track: clone of last item → real items → clone of first item
+  // Positions:  0 (clone_last) | 1…n (real) | n+1 (clone_first)
+  const track = useMemo(() => [
+    { ...items[n - 1], id: -1 },
+    ...items,
+    { ...items[0],     id: -2 },
+  ], [items, n])
 
-  // logicalIndex: the real item currently "on screen"
-  const logicalIndex = slidePos % n
+  // slidePos starts at 1 (first real item)
+  const [slidePos, setSlidePos] = useState(1)
+  const [animated, setAnimated] = useState(true)
 
-  const advance = useCallback(() => {
+  // Sync mutable refs so setTimeout closures always see fresh values
+  const nRef         = useRef(n)
+  const trackLenRef  = useRef(track.length)
+  useEffect(() => { nRef.current        = n            }, [n])
+  useEffect(() => { trackLenRef.current = track.length }, [track.length])
+
+  // logicalIndex: which real item is on screen
+  const logicalIndex = (slidePos - 1 + n) % n
+
+  // Reset position when items array is replaced (placeholder → real)
+  useEffect(() => {
+    setAnimated(false)
+    setSlidePos(1)
+    requestAnimationFrame(() => requestAnimationFrame(() => setAnimated(true)))
+  }, [items])
+
+  // ── Navigation helpers ──────────────────────────────────────────────────────
+  const doAdvance = useCallback(() => {
     setAnimated(true)
     setSlidePos(pos => {
       const next = pos + 1
-      if (next === track.length - 1) {
-        // We're sliding into the clone → after transition, silently jump to pos 0
+      // Reached clone_first → silently jump back to real first
+      if (next === trackLenRef.current - 1) {
         setTimeout(() => {
-          setAnimated(false)          // disable transition
-          setSlidePos(0)              // instant reset to real first slide
-          // Re-enable transition on next paint
+          setAnimated(false)
+          setSlidePos(1)
           requestAnimationFrame(() => requestAnimationFrame(() => setAnimated(true)))
         }, SLIDE_MS + 20)
       }
       return next
     })
-  }, [track.length])
+  }, [])
 
-  // Auto-advance timer
+  const doRetreat = useCallback(() => {
+    setAnimated(true)
+    setSlidePos(pos => {
+      const prev = pos - 1
+      // Reached clone_last → silently jump back to real last
+      if (prev === 0) {
+        setTimeout(() => {
+          setAnimated(false)
+          setSlidePos(nRef.current)
+          requestAnimationFrame(() => requestAnimationFrame(() => setAnimated(true)))
+        }, SLIDE_MS + 20)
+      }
+      return prev
+    })
+  }, [])
+
+  const resetTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current)
+    timerRef.current = setInterval(doAdvance, AUTO_MS)
+  }, [doAdvance])
+
+  const advance = useCallback(() => { resetTimer(); doAdvance() }, [resetTimer, doAdvance])
+  const retreat = useCallback(() => { resetTimer(); doRetreat() }, [resetTimer, doRetreat])
+
   useEffect(() => {
-    const timer = setInterval(advance, AUTO_MS)
-    return () => clearInterval(timer)
-  }, [advance])
+    resetTimer()
+    return () => { if (timerRef.current) clearInterval(timerRef.current) }
+  }, [resetTimer])
 
   // ── GSAP entrance ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -117,8 +180,9 @@ export default function App() {
     }
   }, [results])
 
-  const prevItem = items[(logicalIndex - 1 + n) % n]
-  const nextItem = items[(logicalIndex + 1) % n]
+  const currentItem = items[logicalIndex]
+  const prevItem    = items[(logicalIndex - 1 + n) % n]
+  const nextItem    = items[(logicalIndex + 1) % n]
 
   return (
     <div className="bg-black text-white">
@@ -145,15 +209,16 @@ export default function App() {
         className="relative h-screen bg-[#12121a] overflow-hidden"
       >
 
-        {/* Left card – shows previous item */}
+        {/* Left card */}
         <div
-          className="absolute overflow-hidden rounded-2xl"
+          className="absolute overflow-hidden rounded-2xl cursor-pointer"
           style={{
             width: 270, height: 280,
             top: '50%', left: '50%',
             transform: 'translate(calc(-50% - 355px), -50%)',
             opacity: 0.65,
           }}
+          onClick={retreat}
         >
           <CardFace item={prevItem} blur={10} />
         </div>
@@ -161,11 +226,7 @@ export default function App() {
         {/* Center card – scrolling track */}
         <div
           className="absolute overflow-hidden"
-          style={{
-            width: SLIDE_W, height: '100%',
-            top: 0, left: '50%',
-            transform: 'translateX(-50%)',
-          }}
+          style={{ width: SLIDE_W, height: '100%', top: 0, left: '50%', transform: 'translateX(-50%)' }}
         >
           {/* Sliding track */}
           <div
@@ -180,33 +241,60 @@ export default function App() {
             }}
           >
             {track.map((item, i) => (
-              <div
-                key={i}
-                style={{ width: SLIDE_W, height: '100%', position: 'relative', flexShrink: 0 }}
-              >
+              <div key={i} style={{ width: SLIDE_W, height: '100%', position: 'relative', flexShrink: 0 }}>
                 <CardFace item={item} blur={14} />
               </div>
             ))}
           </div>
 
-          {/* Dark tint for text readability */}
+          {/* Dark tint */}
           <div className="absolute inset-0 bg-black/45 pointer-events-none" />
+
+          {/* Artist name + song – bottom of center card */}
+          <div className="absolute bottom-0 inset-x-0 z-10 px-8 pb-8 pt-24 bg-linear-to-t from-black/75 to-transparent pointer-events-none">
+            <h2 className="text-3xl font-black tracking-tight leading-tight">
+              {currentItem?.artistName}
+            </h2>
+            <p className="text-gray-300 text-sm mt-1 tracking-wide">{currentItem?.trackName}</p>
+          </div>
         </div>
 
-        {/* Right card – shows next item */}
+        {/* Right card */}
         <div
-          className="absolute overflow-hidden rounded-2xl"
+          className="absolute overflow-hidden rounded-2xl cursor-pointer"
           style={{
             width: 270, height: 280,
             top: '50%', left: '50%',
             transform: 'translate(calc(-50% + 355px), -50%)',
             opacity: 0.65,
           }}
+          onClick={advance}
         >
           <CardFace item={nextItem} blur={10} />
         </div>
 
-        {/* Search bar – centered over the carousel */}
+        {/* Prev arrow */}
+        <button
+          onClick={retreat}
+          className="absolute left-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full border border-gray-700 flex items-center justify-center hover:border-white transition-colors"
+        >
+          ←
+        </button>
+
+        {/* Next arrow */}
+        <button
+          onClick={advance}
+          className="absolute right-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full border border-gray-700 flex items-center justify-center hover:border-white transition-colors"
+        >
+          →
+        </button>
+
+        {/* Scroll-down indicator */}
+        <button className="absolute bottom-7 left-8 z-20 w-14 h-14 rounded-full border border-gray-700 flex items-center justify-center hover:border-white transition-colors text-lg">
+          ↓
+        </button>
+
+        {/* Search bar – centered overlay */}
         <div className="absolute inset-0 z-10 flex items-center justify-center px-4">
           <div className="flex flex-col items-center w-full max-w-xl">
 

@@ -9,7 +9,7 @@ interface SongListProps {
 }
 
 const GLOW_COLORS = ['#7C3AED', '#a78bfa', '#c4b5fd']
-const GLOW_RGB = '124 58 237'
+const GLOW_RGB = '263 85 57'  // HSL for purple-600 (#7C3AED)
 
 export default function SongList({ mode, results, onSongClick }: SongListProps) {
   if (mode === 'song') {

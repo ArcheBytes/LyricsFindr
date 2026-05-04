@@ -15,7 +15,7 @@ export function useFeaturedSongs() {
       const all: Song[] = []
       for (const r of results) {
         if (r.status === 'fulfilled' && Array.isArray(r.value)) {
-          all.push(...(r.value as Song[]).filter(s => s.artworkUrl))
+          all.push(...(r.value as Song[]))
         }
       }
       const seen = new Set<number>()
