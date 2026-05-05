@@ -1,31 +1,50 @@
 import { useState, useEffect } from 'react'
 import type { Song } from '../types/song'
 
-const API = 'http://localhost:3000/api/songs'
+const RSS_URL = 'https://rss.applemarketingtools.com/api/v2/us/music/most-played/100/songs.json'
+
+interface RssResult {
+  id: string
+  name: string
+  artistName: string
+  artworkUrl100: string
+  releaseDate: string
+}
 
 export function useFeaturedSongs() {
   const [songs, setSongs] = useState<Song[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.allSettled([
-      fetch(`${API}/search?q=love`).then(r => r.json()),
-      fetch(`${API}/search?q=night`).then(r => r.json()),
-    ]).then(results => {
-      const all: Song[] = []
-      for (const r of results) {
-        if (r.status === 'fulfilled' && Array.isArray(r.value)) {
-          all.push(...(r.value as Song[]))
+    fetch(RSS_URL)
+      .then(r => r.json())
+      .then((data: { feed: { results: RssResult[] } }) => {
+        const results = data.feed.results ?? []
+
+        // One song per artist (first = most popular), up to 15 unique artists
+        const seen = new Set<string>()
+        const unique: Song[] = []
+
+        for (const t of results) {
+          const key = t.artistName.toLowerCase()
+          if (seen.has(key)) continue
+          seen.add(key)
+          unique.push({
+            id: parseInt(t.id),
+            trackName: t.name,
+            artistName: t.artistName,
+            albumName: '',
+            duration: 0,
+            plainLyrics: '',
+            artworkUrl: t.artworkUrl100.replace('100x100bb', '600x600bb'),
+          })
+          if (unique.length === 15) break
         }
-      }
-      const seen = new Set<number>()
-      const unique = all.filter(s => {
-        if (seen.has(s.id)) return false
-        seen.add(s.id)
-        return true
+
+        setSongs(unique)
       })
-      setSongs(unique.slice(0, 25))
-    }).finally(() => setLoading(false))
+      .catch(() => {/* keep placeholder gradients on error */})
+      .finally(() => setLoading(false))
   }, [])
 
   return { songs, loading }

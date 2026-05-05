@@ -7,38 +7,63 @@ interface LyricsViewProps {
 
 export default function LyricsView({ song, onBack }: LyricsViewProps) {
   return (
-    <div className="w-full max-w-2xl">
+    <div className="w-full max-w-2xl mx-auto">
+
+      {/* Back */}
       <button
         onClick={onBack}
-        className="text-sm text-gray-400 hover:text-white mb-6 transition flex items-center gap-2"
+        className="flex items-center gap-2 text-xs font-semibold tracking-widest text-gray-500 hover:text-white transition-colors mb-8"
       >
-        ← Back to results
+        ← BACK
       </button>
 
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl overflow-hidden">
-        <div className="flex gap-5 p-6 border-b border-gray-700">
-          {song.artworkUrl && (
+      {/* Header card */}
+      <div className="relative rounded-2xl overflow-hidden mb-6">
+        {/* Blurred artwork background */}
+        {song.artworkUrl && (
+          <img
+            src={song.artworkUrl}
+            alt=""
+            aria-hidden
+            className="absolute inset-0 w-full h-full object-cover scale-110"
+            style={{ filter: 'blur(28px)', opacity: 0.45 }}
+          />
+        )}
+        <div className="absolute inset-0 bg-black/60" />
+
+        <div className="relative flex gap-5 p-6">
+          {song.artworkUrl ? (
             <img
               src={song.artworkUrl}
               alt={song.trackName}
-              className="w-24 h-24 rounded-xl object-cover shrink-0"
+              className="w-24 h-24 rounded-xl object-cover shrink-0 shadow-2xl"
             />
+          ) : (
+            <div className="w-24 h-24 rounded-xl bg-gray-800 flex items-center justify-center text-3xl shrink-0">
+              ♪
+            </div>
           )}
-          <div className="flex flex-col justify-center">
-            <h2 className="text-2xl font-bold text-white">{song.trackName}</h2>
-            <p className="text-purple-400 mt-1 font-medium">{song.artistName}</p>
+          <div className="flex flex-col justify-center min-w-0">
+            <h2 className="text-2xl font-black text-white leading-tight truncate">{song.trackName}</h2>
+            <p className="text-purple-400 font-semibold mt-1 truncate">{song.artistName}</p>
             {song.albumName && (
-              <p className="text-gray-500 text-sm mt-1">{song.albumName}</p>
+              <p className="text-gray-400 text-sm mt-1 truncate">{song.albumName}</p>
             )}
           </div>
         </div>
-
-        <div className="p-6">
-          <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans leading-relaxed">
-            {song.plainLyrics || 'No lyrics available.'}
-          </pre>
-        </div>
       </div>
+
+      {/* Lyrics */}
+      <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6">
+        {song.plainLyrics ? (
+          <pre className="text-gray-200 text-sm whitespace-pre-wrap font-sans leading-7 tracking-wide">
+            {song.plainLyrics}
+          </pre>
+        ) : (
+          <p className="text-gray-500 text-sm text-center py-8">No lyrics available.</p>
+        )}
+      </div>
+
     </div>
   )
 }
